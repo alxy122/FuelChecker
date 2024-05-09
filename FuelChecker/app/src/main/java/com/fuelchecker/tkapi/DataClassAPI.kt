@@ -19,5 +19,6 @@ data class FuelStation(
     val e10: Double?,
     val price: Double?,
     val isOpen: Boolean,
+    var dist: Float?
 
 )

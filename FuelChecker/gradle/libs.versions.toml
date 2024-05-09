@@ -12,6 +12,10 @@ constraintlayout = "2.1.4"
 retrofitVersion = "2.11.0"
 playServicesLocation = "21.2.0"
 swiperefreshlayout = "1.1.0"
+kotlin-coroutines = "1.7.3"
+playServicesTasks = "18.1.0"
+lifecycle = "2.7.0"
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -26,6 +30,9 @@ retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = 
 gson = {group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofitVersion"}
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 androidx-swipeRefreshLayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlin-coroutines" }
+google-play-services-tasks = { group = "com.google.android.gms", name = "play-services-tasks", version.ref = "playServicesTasks" }
+lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

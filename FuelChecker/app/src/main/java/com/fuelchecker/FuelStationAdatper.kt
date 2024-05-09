@@ -10,50 +10,69 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.TextView
 import com.fuelchecker.tkapi.FuelStation
-import com.fuelchecker.tkapi.FuelType
 
-class FuelStationAdapter(private val activity: MainActivity,private val lat:Double, private val lng:Double, private val fuelType:FuelType, private val fuelStations: List<FuelStation>) :
+
+class FuelStationAdapter(
+    private val activity: MainActivity,
+    private val lat: Double,
+    private val lng: Double,
+    private val fuelType: FuelType,
+    private val fuelStations: List<FuelStation>
+) :
     ArrayAdapter<FuelStation>(activity, R.layout.list_fuel_stations, fuelStations) {
 
+    init {
+        // Pre-calculate distances when setting the data
+        fuelStations.forEach { station ->
+            val results = FloatArray(1)
+            Location.distanceBetween(lat, lng, station.lat, station.lng, results)
+            station.dist = results[0] / 1000 // Store this value in your data model
+        }
+    }
+
+    private class ViewHolder(view: View) {
+        val priceTextView: TextView = view.findViewById(R.id.price)
+        val stationNameTextView: TextView = view.findViewById(R.id.station_name)
+        val stationPlace: TextView = view.findViewById(R.id.station_place)
+        val distanceTextView: TextView = view.findViewById(R.id.distance)
+    }
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        val view = convertView ?: LayoutInflater.from(context)
-            .inflate(R.layout.list_fuel_stations, parent, false)
+        val viewHolder: ViewHolder
+        val view: View
 
-        val station = fuelStations[position]
-
-        val priceTextView = view.findViewById<TextView>(R.id.price)
-        val stationNameTextView = view.findViewById<TextView>(R.id.station_name)
-        val fuelTypeTextView = view.findViewById<TextView>(R.id.fuel_type)
-        val distanceTextView = view.findViewById<TextView>(R.id.distance)
-
-        priceTextView.text = station.price.toString()
-        stationNameTextView.text = station.name
-        fuelTypeTextView.text = fuelType.value
-        val results = FloatArray(1)
-        Location.distanceBetween(lat, lng, station.lat, station.lng, results)
-        val distanceInKm = results[0] / 1000
-        val roundedDistance = String.format("%.1f", distanceInKm)
-        distanceTextView.text = "$roundedDistance km"
-
-        view.setOnClickListener {
-            val gmmIntentUri =
-                Uri.parse("geo:${station.lat},${station.lng}?q=${station.lat},${station.lng}(${station.name})")
-            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-            mapIntent.setPackage("com.google.android.apps.maps")
-            if (mapIntent.resolveActivity(activity.packageManager) != null) {
-                AlertDialog.Builder(activity)
-                    .setTitle("Open in Google Maps")
-                    .setMessage("Do you want to open ${station.name} in Google Maps?")
-                    .setPositiveButton("Yes") { _, _ ->
-                        // Start the map intent activity when the "Yes" button is clicked
-                        activity.startActivity(mapIntent)
-                    }
-                    .setNegativeButton("No", null)
-                    .show()
-            }
+        if (convertView == null) {
+            view = LayoutInflater.from(context).inflate(R.layout.list_fuel_stations, parent, false)
+            viewHolder = ViewHolder(view)
+            view.tag = viewHolder
+        } else {
+            view = convertView
+            viewHolder = view.tag as ViewHolder
         }
 
+        val station = getItem(position) ?: return view
+        val stationPlace= station.place.lowercase().replaceFirstChar { it.uppercase() }
+        viewHolder.priceTextView.text = station.price.toString()
+        viewHolder.stationNameTextView.text = station.name
+        viewHolder.stationPlace.text = stationPlace
+        viewHolder.distanceTextView.text = String.format("%.1f km", station.dist)
+
+        view.setOnClickListener { showMapDialog(station) }
+
         return view
+    }
+
+    private fun showMapDialog(station: FuelStation) {
+        val gmmIntentUri = Uri.parse("geo:${station.lat},${station.lng}?q=${station.lat},${station.lng}(${station.name})")
+        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+        mapIntent.setPackage("com.google.android.apps.maps")
+        if (mapIntent.resolveActivity(activity.packageManager) != null) {
+            AlertDialog.Builder(activity)
+                .setTitle("Open in Google Maps")
+                .setMessage("Do you want to open ${station.name} in Google Maps?")
+                .setPositiveButton("Yes") { _, _ -> activity.startActivity(mapIntent) }
+                .setNegativeButton("No", null)
+                .show()
+        }
     }
 }
