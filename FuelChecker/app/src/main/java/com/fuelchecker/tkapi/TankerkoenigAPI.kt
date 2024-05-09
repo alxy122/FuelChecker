@@ -1,6 +1,5 @@
 package com.fuelchecker.tkapi
 
-import android.content.Context
 import android.util.Log
 import retrofit2.Call
 import retrofit2.Callback
@@ -9,10 +8,20 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
-import java.io.File
+
+enum class FuelType(val value: String) {
+    ALL("all"),
+    DIESEL("diesel"),
+    E5("e5"),
+    E10("e10");
+}
+enum class SortType(val value: String) {
+    PRICE("price"),
+    DIST("dist")
+}
+private const val BASE_URL = "https://creativecommons.tankerkoenig.de/"
 
 class TankerkoenigAPI (private val apikey:String) {
-
     interface FuelStationService {
         @GET("json/list.php")
         fun getFuelStations(
@@ -24,15 +33,10 @@ class TankerkoenigAPI (private val apikey:String) {
             @Query("apikey") apikey: String
         ): Call<FuelStationResponse>
     }
-
-
-    fun getFuelStations(lat:Double, lng: Double, rad:Int, sort: String, type: String, onResult: (List<FuelStation>) -> Unit) {
-        var sortType:String = sort
-        if (type=="all"){
-            sortType = "dist"
-        }
+    fun getFuelStations(lat:Double, lng: Double, rad:Int, sortType: SortType, fuelType: FuelType, onResult: (List<FuelStation>) -> Unit) {
+        val finalSortType = if (fuelType == FuelType.ALL) SortType.DIST else sortType
         val apiService = RetrofitClient.fuelStationService
-        apiService.getFuelStations(lat, lng, rad, sortType, type, apikey).enqueue(object :
+        apiService.getFuelStations(lat, lng, rad, finalSortType.value, fuelType.value, apikey).enqueue(object :
             Callback<FuelStationResponse> {
             override fun onResponse(call: Call<FuelStationResponse>, response: Response<FuelStationResponse>) {
                 if (response.isSuccessful) {
@@ -42,17 +46,12 @@ class TankerkoenigAPI (private val apikey:String) {
                     Log.e("API", "Failed to fetch fuel stations", Throwable("Failed to fetch fuel stations"))
                 }
             }
-
             override fun onFailure(call: Call<FuelStationResponse>, t: Throwable) {
                 Log.e("API", "Failed to fetch fuel stations", t)
             }
         })
     }
-
-
     object RetrofitClient {
-        private const val BASE_URL = "https://creativecommons.tankerkoenig.de/"
-
         val fuelStationService: FuelStationService by lazy {
             Retrofit.Builder()
                 .baseUrl(BASE_URL)
@@ -60,6 +59,5 @@ class TankerkoenigAPI (private val apikey:String) {
                 .build()
                 .create(FuelStationService::class.java)
         }
-
     }
 }
